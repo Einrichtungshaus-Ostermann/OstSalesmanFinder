@@ -1,0 +1,61 @@
+.ost-salesman-finder-container {
+    @inactiveBackgroundColor: #9E9E9E;
+    @activeBackgroundColor: #42A5F5;
+    @activeSwitchColor: #2196F3;
+    @border_color_1: #42A5F5;
+
+    .onoffswitch {
+        position: relative;
+        width: 55px;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+    }
+
+    .onoffswitch-checkbox {
+        display: none;
+
+        &:checked {
+            &+.onoffswitch-label {
+                background-color: @activeBackgroundColor;
+                border-color: @border_color_1;
+                &:before {
+                    border-color: @border_color_1;
+                    right: 0px;
+                    background-color: @activeSwitchColor;
+                    box-shadow: 3px 6px 18px 0px rgba(0, 0, 0, 0.2);
+                }
+                .onoffswitch-inner {
+                    margin-left: 0;
+                }
+            }
+        }
+    }
+
+    .onoffswitch-label {
+        display: block;
+        overflow: hidden;
+        cursor: pointer;
+        height: 20px;
+        padding: 0;
+        line-height: 20px;
+        border: 0px solid #FFFFFF;
+        border-radius: 30px;
+        background-color: @inactiveBackgroundColor;
+
+        &:before {
+            content: "";
+            display: block;
+            width: 30px;
+            margin: -5px;
+            background: #FFFFFF;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: 31px;
+            border-radius: 30px;
+            box-shadow: 0 6px 12px 0px #757575;
+        }
+    }
+
+}
