@@ -7,6 +7,34 @@
             <name>defaultButton</name>
             <label><![CDATA[<b>Allgemeine Einstellungen</b>]]></label>
         </element>
-
+        <element type="interval">
+            <name>detailPopupTimeout</name>
+            <label>Detail Page Popup timeout</label>
+            <value>60</value>
+        </element>
+        <element type="interval">
+            <name>listingPopupTimeout</name>
+            <label>Listing Popup timeout</label>
+            <value>20</value>
+        </element>
+        <element type="interval">
+            <name>searchTimeout</name>
+            <label>The timeout after which the search gets canceled</label>
+            <value>30</value>
+        </element>
+        <element type="interval">
+            <name>resetTimeout</name>
+            <label>The timeout after which a failed search returns to the default</label>
+            <value>5</value>
+        </element>
+        <element type="text" required="true">
+            <name>webSocketPath</name>
+            <label>The path under which the websocket is available</label>
+        </element>
+        <element type="boolean" required="true">
+            <name>testMode</name>
+            <label>Enable the testmode</label>
+            <description></description>
+        </element>
     </elements>
 </config>

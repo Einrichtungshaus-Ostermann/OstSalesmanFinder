@@ -89,6 +89,10 @@
             };
 
             this.events = {
+                onConnect: (callback) => {
+                    return this.addEventListener('onConnect', callback)
+                },
+
                 /** Global */
                 onAvailableSellerCount: (callback) => {
                     return this.addEventListener('available_seller_count', callback);
@@ -120,6 +124,12 @@
                 }
             };
 
+            this.callEventListener = (event, data) => {
+                if (Array.isArray(this.eventListeners[event])) {
+                    this.eventListeners[event].forEach((callback) => callback(data));
+                }
+            };
+
             this.addEventListener = (event, callback) => {
                 if (Array.isArray(this.eventListeners[event])) {
                     this.eventListeners[event].push(callback)
@@ -129,18 +139,23 @@
             };
 
             this.connect = (connectionType) => {
-                this.connection = new WebSocket('ws://' + document.location.host + ':8181' + connectionType.path);
+                this.connection = new WebSocket('ws://' + salesmanFinderConfig.webSocketPath + connectionType.path);
 
                 this.connection.onmessage = this.onMessage;
 
                 let buffer = [];
                 let realSend = this.connection.send;
-                this.connection.onopen = () => {
+
+                this.addEventListener('onConnect', ()  => {
                     this.connection.send = realSend;
 
                     buffer.forEach((message) => {
                         this.connection.send(message);
                     })
+                });
+
+                this.connection.onopen = () => {
+                    this.callEventListener('onConnect');
                 };
 
                 this.connection.send = (message) => {
@@ -151,17 +166,29 @@
             this.onMessage = (message) => {
                 let data = JSON.parse(message.data);
 
-                if (this.eventListeners[data.type]) {
-                    this.eventListeners[data.type].forEach((callback) => callback(data));
-                }
+                this.callEventListener('onConnect', data);
             };
 
             this.sendMessage = (message) => {
                 this.connection.send(JSON.stringify(message))
             };
 
+            if (salesmanFinderConfig.testMode === true) {
+                this.connect = (connectionType) => {
+                    console.log("Opening Connection with path " + connectionType.path);
+                    this.callEventListener('onConnect');
+                };
+
+                window.salesmanFinderMessage = (data) => {
+                    this.callEventListener(data.type, data);
+                };
+
+                this.sendMessage = function (message) {
+                    console.log("Sent messsage: " + JSON.stringify(message))
+                }
+            }
+
             return this;
         }
     }
-
 })(jQuery);

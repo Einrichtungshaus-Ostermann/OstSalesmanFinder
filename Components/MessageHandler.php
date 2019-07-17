@@ -34,40 +34,40 @@ class MessageHandler
 
     public function getAvailableSellerCount(Client $client, $data = null): void
     {
-        $groupable = null;
+        $clientHolder = null;
 
         switch ($client->getType()) {
             case WebsocketHandler::SELLER:
-                $groupable = $this->sellerRegistry->getSellerForClient($client);
+                $clientHolder = $this->sellerRegistry->getSellerForClient($client);
                 break;
             case WebsocketHandler::CUSTOMER:
-                $groupable = $this->customerRegistry->getCustomerForClient($client);
+                $clientHolder = $this->customerRegistry->getCustomerForClient($client);
                 break;
             default:
                 break;
         }
 
-        if ($groupable === null) {
+        if ($clientHolder === null) {
             return;
         }
 
-        /** @var Seller|Customer $groupable */
-        $groupable->send(
-            $this->sendAvailableSellerCount(
-                count(
-                    $this->sellerRegistry->getAvailableSellers(
-                        $groupable->getGroup()
-                    )
+        $this->sellerRegistry->getAvailableSellersForClient($client)->then(function (array $sellers) {
+            /** @var Seller|Customer $clientHolder */
+            $clientHolder->send(
+                $this->sendAvailableSellerCount(
+                    count($sellers)
                 )
-            )
-        );
+            );
+        });
     }
 
     public function getSellerCount(Client $client, $data = null): void
     {
         $client->getConnection()->send(
             $this->sendSellerCount(
-                $this->sellerRegistry->getSellers()
+                count(
+                    $this->sellerRegistry->getSellers()
+                )
             )
         );
     }
@@ -89,26 +89,26 @@ class MessageHandler
 
     public function requestSeller(Client $client, $data): void
     {
-        $customer = $this->customerRegistry->getCustomerForClient($client);
-        $sellers = $this->sellerRegistry->getAvailableSellers($customer->getGroup());
+        $this->sellerRegistry->getAvailableSellersForClient($client)->then(function (array $sellers) use ($client) {
+            if (count($sellers) === 0) {
+                return;
+            }
 
-        if (count($sellers) === 0) {
-            return;
-        }
+            $customer = $this->customerRegistry->getCustomerForClient($client);
+            //        $this->tickets[] = new Ticket($customer);
 
-//        $this->tickets[] = new Ticket($customer);
-
-        array_map(function (Seller $seller) use ($customer) {
-            $seller->send(
-                $this->sendSellerRequested($customer->getClient()->getID())
-            );
-        }, $sellers);
+            array_map(function (Seller $seller) use ($customer) {
+                $seller->send(
+                    $this->sendSellerRequested($customer->getClient()->getID())
+                );
+            }, $sellers);
+        });
     }
 
     public function cancelSellerRequest(Client $client, $data): void
     {
         $customer = $this->customerRegistry->getCustomerForClient($client);
-        $sellers = $this->sellerRegistry->getAvailableSellers($customer->getGroup());
+        $sellers = $this->sellerRegistry->getSellers();
 
         if (count($sellers) === 0) {
             return;
@@ -143,7 +143,7 @@ class MessageHandler
 
             $this->getAvailableSellerCount($seller->getClient(), null);
 
-        }, $this->sellerRegistry->getSellers($seller->getGroup()));
+        }, $this->sellerRegistry->getSellers());
     }
 
     public function acceptCustomer(Client $client, $data): void

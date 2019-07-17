@@ -61,8 +61,8 @@
                     me.requestButton.show();
                     me.cancelButton.hide();
 
-                    me.timer = setTimeout(me.reset, 10 * 1000);
-                }, 30 * 1000);
+                    me.timer = setTimeout(me.reset, salesmanFinderConfig.resetTimeout * 1000);
+                }, salesmanFinderConfig.searchTimeout * 1000);
             });
 
             websocketConnection.events.onSellerUnavailable(() => {
@@ -77,7 +77,7 @@
                     me.cancelButton.hide();
 
                     me.timer = setTimeout(me.reset, 10 * 1000);
-                }, 30 * 1000);
+                }, salesmanFinderConfig.searchTimeout * 1000);
             });
 
             websocketConnection.events.onSellerFound((data) => {
@@ -89,29 +89,38 @@
                 clearTimeout(me.timer);
             });
 
+           websocketConnection.events.onAvailableSellerCount((data) => {
+                let amount = data['content'];
+
+                if (amount > 0) {
+                    $('.entry--salesman-finder').show();
+                } else {
+                    $('.entry--salesman-finder').hide();
+                }
+            });
+
             websocketConnection.connect(websocketConnection.types.customer);
             websocketConnection.sendMessage(websocketConnection.messages.identify({
                 'group': me.$el.data('group'),
                 'bunk': me.$el.data('bunk')
             }));
+            websocketConnection.send(websocketConnection.messages.getAvailableSellerCount());
+
+            if (window.sessionStorage.getItem("disable-seller-popup") !== "true") {
+                setTimeout(() => {
+                    $.modal.open(modalTemplate, {
+                        title: 'Verkäufer Finder'
+                    });
+
+                    window.sessionStorage.setItem("disable-seller-popup", "true");
+                }, salesmanFinderConfig.popupTimeout * 1000);
+            }
         }
     });
 
     $.subscribe('plugin/swModal/onOpen', function () {
         $(".ost-salesman-finder-customer").ostSalesmanFinderCustomer();
     });
-
-
-    if (window.sessionStorage.getItem("disable-seller-popup") !== "true") {
-        setTimeout(() => {
-            $.modal.open(modalTemplate, {
-                title: 'Verkäufer Finder'
-            });
-
-            window.sessionStorage.setItem("disable-seller-popup", "true");
-        }, 10 * 1000);
-    }
-
 
     // subscribe to loading emotions
     $.subscribe('plugin/swEmotionLoader/onLoadEmotionFinished', function () {

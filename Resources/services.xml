@@ -9,5 +9,17 @@
             <tag name="console.command" command="ost-salesman-finder:websocket-server-run"/>
         </service>
 
+        <service id="ost_salesman_finder.config" class="Shopware\Components\Plugin\CachedConfigReader">
+            <factory service="shopware.plugin.cached_config_reader" method="getByPluginName"/>
+            <argument type="string">OstSalesmanFinder</argument>
+            <argument type="expression">container.initialized('shop') ? service('shop') : null</argument>
+        </service>
+
+        <service id="ost_salesman_finder.subscriber.config_subscriber" class="OstSalesmanFinder\Subscriber\ConfigSubscriber">
+            <tag name="shopware.event_subscriber"/>
+            <argument type="service" id="ost_salesman_finder.config"/>
+            <argument type="string">%ost_salesman_finder.view_dir%</argument>
+        </service>
+
     </services>
 </container>

@@ -18,36 +18,63 @@
 
         customerAvailableTemplate: "<div class=\"accept-customer-button\"><input type=\"submit\" name=\"accept-customer-button\" value=\"Ich übernehme\"></div>",
 
+        state: false,
+
+
+
         createCustomer: function (customerID) {
             let me = this;
+
+
+            var n = new Noty({
+                text: 'Do you want to continue? <input id="example" type="text">',
+                buttons: [
+                    Noty.button('Ich Übernehme!', 'btn btn-success', function () {
+
+
+                        console.log('button 1 clicked');
+
+                        // Open Popup
+                        // Show Buttons
+                        // Im there / Got interrupted
+                        // After click show "Done" button
+
+
+
+                    }, {id: 'button1', 'data-status': 'ok'})
+                ]
+            });
+
+
+
             let customerList = me.$el.find('.customer-list');
 
             let acceptCustomerDiv = $('<div/>', {
-                class: 'accept-customer-button',
+                class:     'accept-customer-button',
                 'data-id': customerID
             });
 
             let acceptCustomerButton = $('<input/>', {
-                type: 'submit',
-                name: 'accept-customer-button',
+                type:  'submit',
+                name:  'accept-customer-button',
                 value: 'Ich Übernehme!'
             });
 
             let atCustomerButton = $('<input/>', {
-                type: 'submit',
-                name: 'at-customer-button',
+                type:  'submit',
+                name:  'at-customer-button',
                 value: 'Ich bin da!'
             });
 
             let cancelCustomerButton = $('<input/>', {
-                type: 'submit',
-                name: 'cancel-customer-button',
+                type:  'submit',
+                name:  'cancel-customer-button',
                 value: 'Ich kann doch nicht!'
             });
 
             let finishCustomerButton = $('<input/>', {
-                type: 'submit',
-                name: 'finish-customer-button',
+                type:  'submit',
+                name:  'finish-customer-button',
                 value: 'Beratung beendet'
             });
 
@@ -90,24 +117,41 @@
             customerList.append(acceptCustomerDiv);
         },
 
+        setState: function (state) {
+            let me = this;
+
+            me.state = state;
+
+            if (state === true) {
+                me.availableSwitch.css('color', '#00ff00');
+            } else {
+                me.availableSwitch.css('color', '#ff0000');
+            }
+        },
+
+        toggleState: function (state) {
+            let me = this;
+
+            if (state === undefined) {
+                me.setState(!me.state);
+            } else {
+                me.setState(state);
+            }
+
+            me.websocketConnection.sendMessage(me.websocketConnection.messages.setAvailable(me.state));
+        },
+
         init: function () {
             let me = this;
             me.websocketConnection = new $.ostSalesmanFinder.WebsocketConnection();
 
-            me.sellerAmount = me.$el.find('.seller-amount');
-            me.websocketConnection.events.onAvailableSellerCount((data) => {
-                let sellerCount = data['content'];
-
-                me.sellerAmount.text(sellerCount + " Berater verfügbar")
-            });
-
-            me.availableSwitch = me.$el.find('#seller-available-switch');
-            me.availableSwitch.change(() => {
-                me.websocketConnection.sendMessage(me.websocketConnection.messages.setAvailable(me.availableSwitch.get(0).checked))
+            me.availableSwitch = $('.entry--salesman-finder');
+            me.availableSwitch.click(() => {
+                me.toggleState();
             });
 
             me.websocketConnection.events.onStatus((data) => {
-                me.availableSwitch.get(0).checked = data['content'];
+                me.setState(data['content']);
             });
 
             me.websocketConnection.events.onSellerRequested((data) => {
@@ -125,23 +169,30 @@
                 }
 
                 acceptCustomerDiv.remove();
-                me.availableSwitch.get(0).checked = true;
-                me.availableSwitch.change();
+                me.toggleState(true);
+            });
+
+            me.websocketConnection.events.onConnect(() => {
+                me.availableSwitch.show();
             });
 
             me.websocketConnection.connect(me.websocketConnection.types.seller);
+
             me.websocketConnection.sendMessage(me.websocketConnection.messages.identify({
-                'group': me.$el.data('group'),
-                'name': me.$el.data('name'),
-                'number': me.$el.data('number')
+                'number': me.$el.find('.ost-consultant--badge').data('consultant-id')
             }));
-            me.websocketConnection.sendMessage(me.websocketConnection.messages.getAvailableSellerCount());
             me.websocketConnection.sendMessage(me.websocketConnection.messages.getStatus());
+        }
+    });
+
+    $(document).ready(() => {
+        if ($('body').hasClass('is--consultant')) {
+            $("body").ostSalesmanFinderSeller();
         }
     });
 
     // subscribe to loading emotions
     $.subscribe('plugin/swEmotionLoader/onLoadEmotionFinished', function () {
-        $(".ost-salesman-finder-seller").ostSalesmanFinderSeller();
+
     })
 })(jQuery);

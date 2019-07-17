@@ -5,7 +5,12 @@
 
 namespace OstSalesmanFinder\Components;
 
+use OstSalesmanFinder\Components\Clients\ClientHolder;
 use OstSalesmanFinder\Components\Clients\Seller;
+use React\HttpClient\Client as HttpClient;
+use React\Promise\Promise;
+use React\Promise\Deferred;
+use function foo\func;
 
 class SellerRegistry
 {
@@ -16,16 +21,22 @@ class SellerRegistry
     private $tickets = [];
 
     /**
+     * @var HttpClient
+     */
+    private $httpClient;
+
+    /**
      * SellerRegistry constructor.
      */
-    public function __construct()
+    public function __construct(HttpClient $httpClient)
     {
+        $this->httpClient = $httpClient;
     }
 
     public function onIdentify(Client $client, array $identifyData): void
     {
         $foundSellers = array_filter($this->seller, function (Seller $seller) use ($identifyData) {
-            return $seller->getNumber() === (string) $identifyData['number'];
+            return $seller->getNumber() === (string)$identifyData['number'];
         });
 
         if (count($foundSellers) > 1) {
@@ -45,19 +56,79 @@ class SellerRegistry
     }
 
     /**
-     * @param string $group
      * @return Seller[]
      */
-    public function getAvailableSellers(string $group = ''): array
+    public function getAvailableSellers(): array
     {
-        return array_filter($this->seller, static function (Seller $seller) use ($group) {
-            return $seller->isAvailable() === true && ($group === '' ? true : $seller->getGroup() === $group);
+        return array_filter($this->seller, static function (Seller $seller) {
+            return $seller->isAvailable() === true;
         });
     }
 
+    private function doGetRequest(string $url)
+    {
+        $request = $this->httpClient->request('GET', $url);
+
+        $deferred = new Deferred();
+
+        $request->on('response', function ($response) use ($deferred, $url) {
+            echo 'Requesting ' . $url . "\n";
+
+            $data = '';
+
+            $response->on('data', function ($chunk) use ($data) {
+                $data .= $chunk;
+            });
+            $response->on('end', function () use ($data, $deferred) {
+                $deferred->resolve($data);
+            });
+        });
+
+        $request->on('error', function (\Exception $e) use ($deferred) {
+            $deferred->reject($e);
+        });
+
+        $request->end();
+
+        return $deferred->promise();
+    }
+
+    public function getSellersForClient(Client $client)
+    {
+        return $this->doGetRequest('http://intranet-apswit11/api/consultantfinder/consultantsForIP/' . $client->getIP())
+            ->then(function ($data) {
+                return json_decode($data, true);
+            })
+            ->then(function (array $data) {
+                return array_map(function (array $data) {
+                    return $data['number'];
+                }, $data);
+            })
+            ->then(function (array $numbers) {
+                return array_map(function (string $number) {
+                    return $this->getSellerForNumber($number);
+                }, $numbers);
+            });
+    }
+
+    public function getAvailableSellersForClient(Client $client)
+    {
+        return $this->getSellersForClient($client)
+            ->then(function (array $sellers) {
+                return array_filter($sellers, function (Seller $seller) {
+                    return $seller->isAvailable();
+                });
+            });
+    }
+
+    /**
+     * Return the Seller that is assigned to the Client
+     * @param Client $client
+     * @return Seller|null
+     */
     public function getSellerForClient(Client $client): ?Seller
     {
-        $sellers = array_filter($this->seller, static function (Seller $seller) use($client) {
+        $sellers = array_filter($this->seller, static function (Seller $seller) use ($client) {
             return $seller->getClient() === $client;
         });
 
@@ -69,14 +140,11 @@ class SellerRegistry
     }
 
     /**
-     * @param string $group
      * @return Seller[]
      */
-    public function getSellers(string $group = ''): array
+    public function getSellers(): array
     {
-        return array_filter($this->seller, static function (Seller $seller) use ($group) {
-            return ($group === '' ? true : $seller->getGroup() === $group);
-        });
+        return $this->seller;
     }
 
     public function removeSeller(Seller $seller): void
@@ -87,5 +155,16 @@ class SellerRegistry
                 return;
             }
         }
+    }
+
+    private function getSellerForNumber(string $number)
+    {
+        foreach ($this->getSellers() as $seller) {
+            if ($seller->getNumber() === $number) {
+                return $seller;
+            }
+        }
+
+        return null;
     }
 }

@@ -5,14 +5,10 @@
 
 namespace OstSalesmanFinder\Components\Clients;
 
-class Customer extends ClientHolder implements Groupable
+class Customer extends ClientHolder
 {
     /** @var Seller $seller */
     private $seller;
-
-    /** @var string $group */
-    private $group;
-
 
     /**
      * @return Seller|null
@@ -28,18 +24,5 @@ class Customer extends ClientHolder implements Groupable
     public function setSeller($seller)
     {
         $this->seller = $seller;
-    }
-
-    /**
-     * @return string
-     */
-    public function getGroup(): string
-    {
-        return $this->group;
-    }
-
-    public function handleIdentify(array $msg): void
-    {
-        $this->group = $msg['group'];
     }
 }

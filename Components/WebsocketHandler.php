@@ -43,7 +43,7 @@ class WebsocketHandler implements MessageComponentInterface
     public function __construct(ModelManager $modelManager, LoopInterface $loop)
     {
         $this->modelManager = $modelManager;
-        $this->sellerRegistry = new SellerRegistry();
+        $this->sellerRegistry = new SellerRegistry(new \React\HttpClient\Client($loop));
         $this->customerRegistry = new CustomerRegistry();
         $this->messageHandler = new MessageHandler($this->sellerRegistry, $this->customerRegistry);
         $this->loop = $loop;
