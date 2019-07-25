@@ -186,6 +186,12 @@ class MessageHandler
         $customer->send(
             $this->sendSellerFound($seller)
         );
+
+        array_map(function (Seller $seller) use ($customer) {
+            $seller->send(
+                $this->sendSellerRequestCanceled($customer->getClient()->getID())
+        );
+        }, $this->sellerRegistry->getAvailableSellers());
     }
 
     public function cancelCustomer(Client $client, $data): void

@@ -69,7 +69,7 @@
             }
 
             let notification = new Noty({
-                text: 'Dein Kunde wartet am Produktpiloten: ' + customer.Location,
+                text: 'Dein Kunde wartet am Produktpiloten: ' + customer.division,
                 closeWith: ['button'],
                 progressBar: true,
                 type: 'information',

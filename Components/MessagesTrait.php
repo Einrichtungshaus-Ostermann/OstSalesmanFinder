@@ -50,7 +50,7 @@ trait MessagesTrait
             'type' => 'seller_requested',
             'content' => [
                 'ID' => $customer->getClient()->getID(),
-                'Location' => $customer->getLocation()
+                'division' => $customer->getDivision()
             ]
         ]);
     }

@@ -49,7 +49,7 @@ class CustomerRegistry
                 return;
             }
 
-            $customer->setLocation($data['location'] ?? 'Unbekannt');
+            $customer->setDivision($data['division'] ?? 'Unbekannt');
         });
     }
 
