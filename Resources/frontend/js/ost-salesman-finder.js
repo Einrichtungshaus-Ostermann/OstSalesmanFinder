@@ -81,6 +81,12 @@
                         'type': 'arrived_at_customer'
                     }
                 },
+                customerIsGone: (id) => {
+                    return {
+                        'type': 'customer_is_gone',
+                        'content': id
+                    }
+                },
                 getStatus: () => {
                     return {
                         'type': 'get_status'
@@ -138,39 +144,37 @@
                 }
             };
 
+            let buffer = [];
+            this.send = (message) => {
+                buffer.push(message);
+            };
+
             this.connect = (connectionType) => {
                 this.connection = new WebSocket('ws://' + salesmanFinderConfig.webSocketPath + connectionType.path);
 
                 this.connection.onmessage = this.onMessage;
 
-                let buffer = [];
-                let realSend = this.connection.send;
-
-                this.addEventListener('onConnect', ()  => {
-                    this.connection.send = realSend;
+                this.connection.onopen = () => {
+                    this.send = (message) => {
+                        this.connection.send(message);
+                    };
 
                     buffer.forEach((message) => {
-                        this.connection.send(message);
-                    })
-                });
+                        this.send(message);
+                    });
 
-                this.connection.onopen = () => {
                     this.callEventListener('onConnect');
                 };
-
-                this.connection.send = (message) => {
-                    buffer.push(message)
-                }
             };
 
             this.onMessage = (message) => {
                 let data = JSON.parse(message.data);
 
-                this.callEventListener('onConnect', data);
+                this.callEventListener(data['type'], data);
             };
 
             this.sendMessage = (message) => {
-                this.connection.send(JSON.stringify(message))
+                this.send(JSON.stringify(message))
             };
 
             if (salesmanFinderConfig.testMode === true) {

@@ -10,11 +10,52 @@ use OstSalesmanFinder\Components\Clients\Seller;
 
 class CustomerRegistry
 {
+    use RegistryTrait;
+
     private $customer = [];
+
+    /**
+     * CustomerRegistry constructor.
+     * @param \React\HttpClient\Client $httpClient
+     */
+    public function __construct(\React\HttpClient\Client $httpClient)
+    {
+        $this->httpClient = $httpClient;
+    }
+
+    public function getDataForCustomer(Client $client)
+    {
+        echo 'Requsting ProductPilotInfo for IP ' . $client->getIP() . "\n";
+        return $this->doGetRequest('http://intranet-apswit11/api/productpilot/getProductPilotForIP/' . $client->getIP())
+            ->then(function ($data) {
+                return json_decode($data, true);
+            }, function (\Exception $e) {
+                echo $e->getMessage();
+            })->then(function ($data) {
+                return $data['data'] ?? null;
+            });
+    }
+
+    public function onIdentify(Client $client, array $data): void
+    {
+        $customer = $this->getCustomerForClient($client);
+
+        if ($customer === null) {
+            return;
+        }
+
+        $this->getDataForCustomer($client)->then(function ($data) use ($customer) {
+            if ($data === null) {
+                return;
+            }
+
+            $customer->setLocation($data['location'] ?? 'Unbekannt');
+        });
+    }
 
     public function getCustomerForClient(Client $client): Customer
     {
-        $customers = array_filter($this->customer, function (Customer $customer) use($client) {
+        $customers = array_filter($this->customer, function (Customer $customer) use ($client) {
             return $customer->getClient() === $client;
         });
 
@@ -30,7 +71,7 @@ class CustomerRegistry
 
     public function getCustomerForID(string $id): ?Customer
     {
-        $customers = array_filter($this->customer, function (Customer $customer) use($id) {
+        $customers = array_filter($this->customer, function (Customer $customer) use ($id) {
             return $customer->getClient()->getID() === $id;
         });
 
@@ -43,7 +84,7 @@ class CustomerRegistry
 
     public function getCustomerForSeller(Seller $seller): ?Customer
     {
-        $customers = array_filter($this->customer, function (Customer $customer) use($seller) {
+        $customers = array_filter($this->customer, function (Customer $customer) use ($seller) {
             return $customer->getSeller() === $seller;
         });
 
@@ -62,5 +103,13 @@ class CustomerRegistry
                 return;
             }
         }
+    }
+
+    /**
+     * @return array
+     */
+    public function getCustomer(): array
+    {
+        return $this->customer;
     }
 }

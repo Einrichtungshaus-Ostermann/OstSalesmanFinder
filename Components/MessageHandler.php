@@ -51,8 +51,8 @@ class MessageHandler
             return;
         }
 
-        $this->sellerRegistry->getAvailableSellersForClient($client)->then(function (array $sellers) {
-            /** @var Seller|Customer $clientHolder */
+        $this->sellerRegistry->getAvailableSellersForClient($client)->then(function (array $sellers) use ($clientHolder) {
+            echo 'Found ' . count($sellers) . ' Sellers for Client ' . $clientHolder->getClient()->getIP() . "\n";
             $clientHolder->send(
                 $this->sendAvailableSellerCount(
                     count($sellers)
@@ -79,8 +79,7 @@ class MessageHandler
                 $this->sellerRegistry->onIdentify($client, $data);
                 break;
             case WebsocketHandler::CUSTOMER:
-                $customer = $this->customerRegistry->getCustomerForClient($client);
-                $customer->handleIdentify($data);
+                $this->customerRegistry->onIdentify($client, $data);
                 break;
             default:
                 break;
@@ -99,7 +98,7 @@ class MessageHandler
 
             array_map(function (Seller $seller) use ($customer) {
                 $seller->send(
-                    $this->sendSellerRequested($customer->getClient()->getID())
+                    $this->sendSellerRequested($customer)
                 );
             }, $sellers);
         });
@@ -127,6 +126,25 @@ class MessageHandler
         }
     }
 
+    public function customerIsGone(Client $client, $data): void
+    {
+        $seller = $this->sellerRegistry->getSellerForClient($client);
+        if ($seller === null) {
+            return;
+        }
+
+        $customer = $this->customerRegistry->getCustomerForSeller($seller);
+
+        if ($customer === null) {
+            return;
+        }
+
+        $customer->setSeller(null);
+        $customer->send(
+            $this->sendReset()
+        );
+    }
+
     public function setAvailable(Client $client, $data): void
     {
         $seller = $this->sellerRegistry->getSellerForClient($client);
@@ -136,14 +154,9 @@ class MessageHandler
 
         $seller->setAvailable((bool)$data);
 
-        array_map(function (Seller $seller) {
-            if ($seller->getClient() === null) {
-                return;
-            }
-
-            $this->getAvailableSellerCount($seller->getClient(), null);
-
-        }, $this->sellerRegistry->getSellers());
+        array_map(function (Customer $customer) {
+            $this->getAvailableSellerCount($customer->getClient(), null);
+        }, $this->customerRegistry->getCustomer());
     }
 
     public function acceptCustomer(Client $client, $data): void

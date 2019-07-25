@@ -5,25 +5,17 @@
 
 namespace OstSalesmanFinder\Components;
 
-use OstSalesmanFinder\Components\Clients\ClientHolder;
 use OstSalesmanFinder\Components\Clients\Seller;
 use React\HttpClient\Client as HttpClient;
-use React\Promise\Promise;
-use React\Promise\Deferred;
-use function foo\func;
 
 class SellerRegistry
 {
+    use RegistryTrait;
 
     /** @var Seller[] */
     private $seller = [];
 
     private $tickets = [];
-
-    /**
-     * @var HttpClient
-     */
-    private $httpClient;
 
     /**
      * SellerRegistry constructor.
@@ -65,39 +57,14 @@ class SellerRegistry
         });
     }
 
-    private function doGetRequest(string $url)
-    {
-        $request = $this->httpClient->request('GET', $url);
-
-        $deferred = new Deferred();
-
-        $request->on('response', function ($response) use ($deferred, $url) {
-            echo 'Requesting ' . $url . "\n";
-
-            $data = '';
-
-            $response->on('data', function ($chunk) use ($data) {
-                $data .= $chunk;
-            });
-            $response->on('end', function () use ($data, $deferred) {
-                $deferred->resolve($data);
-            });
-        });
-
-        $request->on('error', function (\Exception $e) use ($deferred) {
-            $deferred->reject($e);
-        });
-
-        $request->end();
-
-        return $deferred->promise();
-    }
-
     public function getSellersForClient(Client $client)
     {
+        echo 'Requsting Consultants for IP ' . $client->getIP() . "\n";
         return $this->doGetRequest('http://intranet-apswit11/api/consultantfinder/consultantsForIP/' . $client->getIP())
             ->then(function ($data) {
                 return json_decode($data, true);
+            }, function (\Exception $e) {
+                echo $e->getMessage();
             })
             ->then(function (array $data) {
                 return array_map(function (array $data) {
@@ -108,6 +75,10 @@ class SellerRegistry
                 return array_map(function (string $number) {
                     return $this->getSellerForNumber($number);
                 }, $numbers);
+            })->then(function (array $sellers) {
+                return array_filter($sellers, function (?Seller $seller) {
+                    return $seller !== null;
+                });
             });
     }
 

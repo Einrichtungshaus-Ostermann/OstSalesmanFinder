@@ -13,104 +13,262 @@
     // use strict mode
     "use strict";
 
-    let modalTemplate = '<div class="ost-salesman-finder-container ost-salesman-finder-customer" data-bunk="123" data-group="entwicklung"><div class="salesman-finder-headline"><p>Kein persönlicher Berater in Sichtweite?</p><p>Tippen sie auf den Servicebutton und einer unserer Mitarbeiter kommt sofort und kümmert sich um ihr Anliegen!</p></div><div class="request-seller-button"><input type="submit" name="request-seller-button" value="Berater rufen" id="request-seller-button"></div><div class="cancel-request-seller-button"><input type="submit" name="cancel-request-seller-button" value="Abbrechen" id="cancel-request-seller-button" style="display:none"></div></div>';
-
     // detail plugin
     $.plugin("ostSalesmanFinderCustomer", {
+        infoText: {
+            "press-button-for-call": "",
+            "searching-consultant": "Ein freier Berater wird gesucht.",
+            "please-wait-for-consultant": "Bitte warte hier, bis er eingetroffen ist.",
+            "seller-not-available": "Der Berater ist leider nicht mehr Verfügbar. Ein alternativer Berater in der Nähe wird gesucht.",
+            "sorry-no-consultant": "Leider sind gerade alle Berater im Kundengespräch. Bitte versuche es in ein paar Minuten erneut.",
+        },
+
+        buttonText: {
+            "call-consulant": "Berater rufen",
+            "retry": "Nochmal versuchen",
+            "cancel": "Abbrechen"
+        },
+
+        images: {
+            "idle": "/custom/plugins/OstSalesmanFinder/Resources/frontend/img/salesman-finder--idle--icon.png",
+            "waiting": "/custom/plugins/OstSalesmanFinder/Resources/frontend/img/salesman-finder--waiting--icon.png"
+        },
+
+        descriptionText: {
+            "idle": "Überall wo Du dieses Symbol siehst, kannst Du einen Berater herbeirufen.",
+            "waiting": "Dein persönlicher Berater ist auf dem Weg hierhin."
+        },
+
+        titleText: {
+            "idle": "Dürfen wir dir helfen?",
+            "waiting": "Hilfe ist auf dem Weg..."
+        },
+
+        content: '<div style="float: left; width: 40%; ">' +
+            '<img id="salesman-finder--image" src="/custom/plugins/OstSalesmanFinder/Resources/frontend/img/salesman-finder--idle--icon.png" style="margin: auto; margin-top: 50px;">' +
+            '</div><div style="float: left;width: 55%;margin-right: 5%;padding-top: 30px;">' +
+            '<span id="salesman-finder--title" style="text-transform: uppercase;font-weight: bold;font-size: 28px;">#TEXT#</span>' +
+            '<p id="salesman-finder--description" style="font-size: 28px;line-height: 36px;margin-top: 30px;">#TEXT#</p>' +
+            '<p id="salesman-finder--text" style="font-size: 28px;line-height: 36px;margin-top: 30px;">#TEXT#</p><button id="salesman-finder--button">#TEXT#</button></div>',
+
+        websocketConnection: null,
+
+        sellerCount: 0,
+        modal: null,
+        requested: false,
+        onClick: () => {
+        },
+
+        setImageType: function (type) {
+            this.getImage().attr("src", this.images[type])
+        },
+
+        setInfoText: function (text) {
+            if (this.modal === null) {
+                this.openPopup();
+            }
+
+            this.getInfo().text(this.infoText[text])
+        },
+
+        setDescriptionText: function (text) {
+            if (this.modal === null) {
+                this.openPopup();
+            }
+
+            this.getDescription().text(this.descriptionText[text])
+        },
+
+        setTitleText: function (text) {
+            if (this.modal === null) {
+                this.openPopup();
+            }
+
+            this.getTitle().text(this.titleText[text])
+        },
+
+
+        setButtonText: function (text) {
+            if (this.modal === null) {
+                this.openPopup();
+            }
+
+            this.getButton().show();
+            this.getButton().text(this.buttonText[text])
+        },
+
+        getTitle: function() {
+            return this.$el.find("#salesman-finder--title");
+        },
+
+        getDescription: function() {
+            return this.$el.find("#salesman-finder--description");
+        },
+
+        getImage: function () {
+            return this.$el.find('#salesman-finder--image');
+        },
+
+        getButton: function () {
+            return this.$el.find('#salesman-finder--button');
+        },
+
+        getInfo: function () {
+            return this.$el.find('#salesman-finder--text');
+        },
+
+        getFinderContent: function () {
+            return this.$el.find('#salesman-finder--content');
+        },
+
+        getIcon: function () {
+            return this.$el.find('.entry--salesman-finder');
+        },
+
+        cancelRequest: function () {
+            clearTimeout(this.timer);
+            this.websocketConnection.sendMessage(this.websocketConnection.messages.cancelSellerRequest());
+            this.requested = false;
+            this.setTitleText("idle");
+            this.setDescriptionText("idle");
+            this.setInfoText("press-button-for-call");
+            this.setButtonText("call-consulant");
+            this.onClick = this.requestSeller;
+        },
+
+        requestSeller: function () {
+            this.setTitleText("idle");
+            this.setDescriptionText("idle");
+            this.setInfoText("searching-consultant");
+            this.setButtonText("cancel");
+            this.onClick = this.cancelRequest;
+
+            if (this.timer !== null) {
+                clearTimeout(this.timer);
+            }
+
+            this.websocketConnection.sendMessage(this.websocketConnection.messages.requestSeller());
+            this.requested = true;
+
+            this.timer = setTimeout(() => {
+                this.onSearchTimeout();
+            }, salesmanFinderConfig.searchTimeout * 1000);
+        },
+
+        onSearchTimeout: function () {
+            this.websocketConnection.sendMessage(this.websocketConnection.messages.cancelSellerRequest());
+            this.requested = false;
+            this.setTitleText("idle");
+            this.setDescriptionText("idle");
+            this.setInfoText("sorry-no-consultant");
+            this.setButtonText("retry");
+            this.onClick = this.requestSeller;
+        },
+
+        onSellerUnavailable: function () {
+            this.setTitleText("idle");
+            this.setDescriptionText("idle");
+            this.setInfoText("seller-not-available");
+            this.setButtonText("cancel");
+            this.setImageType("idle");
+            this.onClick = this.cancelRequest;
+            this.requested = true;
+
+            this.timer = setTimeout(() => {
+                this.onSearchTimeout();
+            }, salesmanFinderConfig.searchTimeout * 1000);
+        },
+
+        onSellerFound: function (data) {
+            let seller = data['content'];
+
+            this.setInfoText("please-wait-for-consultant");
+            this.setImageType("waiting");
+            this.setTitleText("waiting");
+            this.setDescriptionText("waiting");
+            this.getButton().hide();
+            this.requested = false;
+
+            clearTimeout(this.timer);
+        },
+
+        onAvailableSellerCount: function (data) {
+            let amount = data['content'];
+
+            if (amount > 0) {
+                this.count = amount;
+                this.getIcon().show();
+            } else {
+                this.count = amount;
+                this.getIcon().hide();
+            }
+        },
+
+        onClose: function () {
+            this.modal = null;
+            clearTimeout(this.timer);
+
+            if (this.requested) {
+                this.websocketConnection.sendMessage(this.websocketConnection.messages.cancelSellerRequest());
+            }
+
+            this.onClick = this.requestSeller;
+        },
+
+        openPopup: function () {
+            this.modal = $.modal.open(this.content, {
+                width: 800, height: 500, onClose: () => {
+                    this.onClose();
+                }
+            });
+            this.setInfoText("press-button-for-call");
+            this.setButtonText("call-consulant");
+            this.setTitleText("idle");
+            this.setDescriptionText("idle");
+            this.onClick = this.requestSeller;
+
+            this.getButton().click(() => {
+                this.onClick();
+            })
+        },
 
         init: function () {
-            let me = this;
-            let websocketConnection = new $.ostSalesmanFinder.WebsocketConnection();
+            this.websocketConnection = new $.ostSalesmanFinder.WebsocketConnection();
 
-            me.requestButton = me.$el.find('#request-seller-button');
-            me.cancelButton = me.$el.find('#cancel-request-seller-button');
-            me.finderHeadline = me.$el.find('.salesman-finder-headline');
+            this.timer = null;
 
-            me.timer = null;
-
-            me.reset = () => {
-                me.requestButton.show();
-                me.cancelButton.hide();
-                me.requestButton.val("Berater rufen");
-                me.finderHeadline.html("<p>Kein persönlicher Berater in Sichtweite?</p><p>Tippen sie auf den Servicebutton und einer unserer Mitarbeiter kommt sofort und kümmert sich um ihr Anliegen!</p>")
-            };
-
-            websocketConnection.events.onReset(() => {
-                me.reset();
-            });
-
-            me.cancelButton.click(() => {
-                websocketConnection.sendMessage(websocketConnection.messages.cancelSellerRequest());
-                me.reset();
-            });
-
-            me.requestButton.click(() => {
-                websocketConnection.sendMessage(websocketConnection.messages.requestSeller());
-
-                if (me.timer !== null) {
-                    clearTimeout(me.timer);
+            this.websocketConnection.events.onReset(() => {
+                if (this.modal !== null) {
+                    this.modal.close();
                 }
 
-                me.requestButton.hide();
-                me.cancelButton.show();
-                me.finderHeadline.html("<p>Ein Berater in der Nähe wird gesucht.</p>");
-
-                me.timer = setTimeout(() => {
-                    me.finderHeadline.html("<p>Sorry, aktuell ist kein Verkäufer sofort Verfügbar.</p>");
-                    me.requestButton.val("Nochmal versuchen");
-                    me.requestButton.show();
-                    me.cancelButton.hide();
-
-                    me.timer = setTimeout(me.reset, salesmanFinderConfig.resetTimeout * 1000);
-                }, salesmanFinderConfig.searchTimeout * 1000);
+                this.onClick = this.requestSeller;
             });
 
-            websocketConnection.events.onSellerUnavailable(() => {
-                me.cancelButton.show();
-                me.finderHeadline.html("<p>Der Berater ist leider nicht mehr Verfügbar. Ein alternativer Berater in der Nähe wird gesucht.</p>");
-
-                me.timer = setTimeout(() => {
-                    websocketConnection.sendMessage(websocketConnection.messages.cancelSellerRequest());
-                    me.finderHeadline.html("<p>Sorry, aktuell ist kein Verkäufer sofort Verfügbar.</p>");
-                    me.requestButton.val("Nochmal versuchen");
-                    me.requestButton.show();
-                    me.cancelButton.hide();
-
-                    me.timer = setTimeout(me.reset, 10 * 1000);
-                }, salesmanFinderConfig.searchTimeout * 1000);
+            this.websocketConnection.events.onSellerUnavailable((message) => {
+                this.onSellerUnavailable(message);
+            });
+            this.websocketConnection.events.onSellerFound((message) => {
+                this.onSellerFound(message);
+            });
+            this.websocketConnection.events.onAvailableSellerCount((message) => {
+                this.onAvailableSellerCount(message);
             });
 
-            websocketConnection.events.onSellerFound((data) => {
-                let seller = data['content'];
-
-                me.cancelButton.hide();
-
-                me.$el.find('.salesman-finder-headline').html("<p>" + seller.name + " wird Sie gleich beraten. Er ist in wenigen Augenblicken für sie da!</p>");
-                clearTimeout(me.timer);
+            this.websocketConnection.events.onConnect(() => {
+                this.getIcon().click(() => {
+                    this.openPopup();
+                });
             });
 
-           websocketConnection.events.onAvailableSellerCount((data) => {
-                let amount = data['content'];
+            this.websocketConnection.sendMessage(this.websocketConnection.messages.getAvailableSellerCount());
 
-                if (amount > 0) {
-                    $('.entry--salesman-finder').show();
-                } else {
-                    $('.entry--salesman-finder').hide();
-                }
-            });
+            this.websocketConnection.connect(this.websocketConnection.types.customer);
+            this.websocketConnection.sendMessage(this.websocketConnection.messages.identify({}));
 
-            websocketConnection.connect(websocketConnection.types.customer);
-            websocketConnection.sendMessage(websocketConnection.messages.identify({
-                'group': me.$el.data('group'),
-                'bunk': me.$el.data('bunk')
-            }));
-            websocketConnection.send(websocketConnection.messages.getAvailableSellerCount());
-
-            if (window.sessionStorage.getItem("disable-seller-popup") !== "true") {
+            if (window.sessionStorage.getItem("disable-seller-popup") !== "true" && $('.entry--salesman-finder').is(":visible")) {
                 setTimeout(() => {
-                    $.modal.open(modalTemplate, {
-                        title: 'Verkäufer Finder'
-                    });
+                    this.openPopup();
 
                     window.sessionStorage.setItem("disable-seller-popup", "true");
                 }, salesmanFinderConfig.popupTimeout * 1000);
@@ -118,8 +276,10 @@
         }
     });
 
-    $.subscribe('plugin/swModal/onOpen', function () {
-        $(".ost-salesman-finder-customer").ostSalesmanFinderCustomer();
+    $(document).ready(function () {
+        if (!$('body').hasClass('is--consultant')) {
+            $("body").ostSalesmanFinderCustomer();
+        }
     });
 
     // subscribe to loading emotions

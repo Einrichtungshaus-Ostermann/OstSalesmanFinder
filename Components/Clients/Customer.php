@@ -10,10 +10,13 @@ class Customer extends ClientHolder
     /** @var Seller $seller */
     private $seller;
 
+    /** @var string $location */
+    private $location;
+
     /**
      * @return Seller|null
      */
-    public function getSeller()
+    public function getSeller(): ?Seller
     {
         return $this->seller;
     }
@@ -21,8 +24,24 @@ class Customer extends ClientHolder
     /**
      * @param Seller $seller
      */
-    public function setSeller($seller)
+    public function setSeller($seller): void
     {
         $this->seller = $seller;
+    }
+
+    /**
+     * @return string
+     */
+    public function getLocation(): ?string
+    {
+        return $this->location;
+    }
+
+    /**
+     * @param string $location
+     */
+    public function setLocation(string $location): void
+    {
+        $this->location = $location;
     }
 }
