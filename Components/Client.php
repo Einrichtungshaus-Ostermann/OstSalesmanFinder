@@ -29,7 +29,9 @@ final class Client
 
     public function getIP(): string
     {
-        return $this->connection->remoteAddress;
+        /** @var Request $httpRequest */
+        $httpRequest = $this->connection->httpRequest;
+        return $httpRequest->getHeader('X-Forwarded-For')[0] ?? $this->connection->remoteAddress;
     }
 
     public function getType(): ?string
@@ -39,6 +41,7 @@ final class Client
 
     public static function getConnectionType(ConnectionInterface $connection)
     {
+
         /** @var Request $httpRequest */
         $httpRequest = $connection->httpRequest;
         $path = $httpRequest->getUri()->getPath();
