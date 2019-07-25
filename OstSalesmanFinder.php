@@ -3,7 +3,7 @@
 /**
  * Einrichtungshaus Ostermann GmbH & Co. KG - SalesmanFinder
  *
- * 
+ *
  *
  * 1.0.0
  * - initial release
@@ -17,7 +17,9 @@
 
 namespace OstSalesmanFinder;
 
-require_once __DIR__ . '/vendor/autoload.php';
+if (file_exists(__DIR__ . '/vendor/autoload.php')) {
+    require_once __DIR__ . '/vendor/autoload.php';
+}
 
 use Shopware\Components\Plugin;
 use Shopware\Components\Plugin\Context;
