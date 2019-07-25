@@ -10,8 +10,8 @@ class Customer extends ClientHolder
     /** @var Seller $seller */
     private $seller;
 
-    /** @var string $location */
-    private $location;
+    /** @var string $division */
+    private $division;
 
     /**
      * @return Seller|null
@@ -32,16 +32,16 @@ class Customer extends ClientHolder
     /**
      * @return string
      */
-    public function getLocation(): ?string
+    public function getDivision(): ?string
     {
-        return $this->location;
+        return $this->division;
     }
 
     /**
-     * @param string $location
+     * @param string $division
      */
-    public function setLocation(string $location): void
+    public function setDivision(string $division): void
     {
-        $this->location = $location;
+        $this->division = $division;
     }
 }

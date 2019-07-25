@@ -97,11 +97,11 @@
             this.getButton().text(this.buttonText[text])
         },
 
-        getTitle: function() {
+        getTitle: function () {
             return this.$el.find("#salesman-finder--title");
         },
 
-        getDescription: function() {
+        getDescription: function () {
             return this.$el.find("#salesman-finder--description");
         },
 
@@ -166,6 +166,12 @@
         },
 
         onSellerUnavailable: function () {
+            if (this.sellerCount === 0) {
+                this.onSearchTimeout();
+                this.getButton().hide();
+                return;
+            }
+
             this.setTitleText("idle");
             this.setDescriptionText("idle");
             this.setInfoText("seller-not-available");
@@ -173,10 +179,6 @@
             this.setImageType("idle");
             this.onClick = this.cancelRequest;
             this.requested = true;
-
-            this.timer = setTimeout(() => {
-                this.onSearchTimeout();
-            }, salesmanFinderConfig.searchTimeout * 1000);
         },
 
         onSellerFound: function (data) {
@@ -196,11 +198,21 @@
             let amount = data['content'];
 
             if (amount > 0) {
-                this.count = amount;
+                this.sellerCount = amount;
                 this.getIcon().show();
+
+                if (this.modal !== null && this.requested === false) {
+                    this.setInfoText("press-button-for-call");
+                    this.getButton().show();
+                }
             } else {
-                this.count = amount;
+                this.sellerCount = amount;
                 this.getIcon().hide();
+
+                if (this.modal !== null) {
+                    this.setInfoText("sorry-no-consultant");
+                    this.getButton().hide();
+                }
             }
         },
 
