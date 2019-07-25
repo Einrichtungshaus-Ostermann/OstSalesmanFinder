@@ -44,7 +44,7 @@ class WebsocketHandler implements MessageComponentInterface
     {
         $this->modelManager = $modelManager;
         $this->sellerRegistry = new SellerRegistry(new \React\HttpClient\Client($loop));
-        $this->customerRegistry = new CustomerRegistry();
+        $this->customerRegistry = new CustomerRegistry(new \React\HttpClient\Client($loop));
         $this->messageHandler = new MessageHandler($this->sellerRegistry, $this->customerRegistry);
         $this->loop = $loop;
     }
@@ -52,6 +52,7 @@ class WebsocketHandler implements MessageComponentInterface
     public function onOpen(ConnectionInterface $conn): void
     {
         $connectionType = Client::getConnectionType($conn);
+        echo 'New connection from ' . $conn->remoteAddress . "\n";
 
         if ($connectionType === null) {
             $conn->close();

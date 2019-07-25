@@ -16,6 +16,6 @@
 
 {block name="frontend_index_header_javascript_jquery_lib"}
     {$smarty.block.parent}
-    <link href="/custom/plugins/OstSalesmanFinder/vendor/needim/noty/lib/noty.css" rel="stylesheet">
-    <script src="/custom/plugins/OstSalesmanFinder/vendor/needim/noty/lib/noty.min.js" type="text/javascript"></script>
+    <link href="/custom/plugins/OstSalesmanFinder/Resources/frontend/lib/noty.css" rel="stylesheet">
+    <script src="/custom/plugins/OstSalesmanFinder/Resources/frontend/lib/noty.min.js" type="text/javascript"></script>
 {/block}

@@ -6,6 +6,7 @@
 namespace OstSalesmanFinder\Components;
 
 use OstSalesmanFinder\Components\Clients\Seller;
+use OstSalesmanFinder\Components\Clients\Customer;
 
 trait MessagesTrait
 {
@@ -14,7 +15,7 @@ trait MessagesTrait
     {
         return json_encode([
             'type' => 'available_seller_count',
-            'content' => $count
+            'content' => (int) $count
         ]);
     }
 
@@ -43,11 +44,14 @@ trait MessagesTrait
         ]);
     }
 
-    public function sendSellerRequested(int $customerID): string
+    public function sendSellerRequested(Customer $customer): string
     {
         return json_encode([
             'type' => 'seller_requested',
-            'content' => $customerID
+            'content' => [
+                'ID' => $customer->getClient()->getID(),
+                'Location' => $customer->getLocation()
+            ]
         ]);
     }
 

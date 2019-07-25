@@ -16,105 +16,88 @@
     // detail plugin
     $.plugin("ostSalesmanFinderSeller", {
 
-        customerAvailableTemplate: "<div class=\"accept-customer-button\"><input type=\"submit\" name=\"accept-customer-button\" value=\"Ich übernehme\"></div>",
+        modalContent: "<button id='salesman-finder--cancel'>Ich wurde aufgehalten</button>" +
+            "<button id='salesman-finder--arrived'>Ich bin da!</button>" +
+            "<button id='salesman-finder--customer-gone'>Kunde war schon weg</button>",
+        modal: null,
+        currentClient: null,
+        notifications: {},
 
-        state: false,
-
-
-
-        createCustomer: function (customerID) {
+        acceptCustomer: function () {
             let me = this;
 
-
-            var n = new Noty({
-                text: 'Do you want to continue? <input id="example" type="text">',
-                buttons: [
-                    Noty.button('Ich Übernehme!', 'btn btn-success', function () {
-
-
-                        console.log('button 1 clicked');
-
-                        // Open Popup
-                        // Show Buttons
-                        // Im there / Got interrupted
-                        // After click show "Done" button
-
-
-
-                    }, {id: 'button1', 'data-status': 'ok'})
-                ]
+            me.toggleState(false);
+            me.modal = $.modal.open(this.modalContent, {
+                width: 800,
+                height: 500,
+                showCloseButton: false,
+                closeOnOverlay: false
             });
 
-
-
-            let customerList = me.$el.find('.customer-list');
-
-            let acceptCustomerDiv = $('<div/>', {
-                class:     'accept-customer-button',
-                'data-id': customerID
+            $('#salesman-finder--cancel').click(() => {
+                me.websocketConnection.sendMessage(me.websocketConnection.messages.cancelCustomer(me.currentClient.ID));
+                me.modal.close();
+                me.currentClient = null;
+                me.modal = null;
             });
 
-            let acceptCustomerButton = $('<input/>', {
-                type:  'submit',
-                name:  'accept-customer-button',
-                value: 'Ich Übernehme!'
-            });
-
-            let atCustomerButton = $('<input/>', {
-                type:  'submit',
-                name:  'at-customer-button',
-                value: 'Ich bin da!'
-            });
-
-            let cancelCustomerButton = $('<input/>', {
-                type:  'submit',
-                name:  'cancel-customer-button',
-                value: 'Ich kann doch nicht!'
-            });
-
-            let finishCustomerButton = $('<input/>', {
-                type:  'submit',
-                name:  'finish-customer-button',
-                value: 'Beratung beendet'
-            });
-
-            finishCustomerButton.click(() => {
-                acceptCustomerDiv.remove();
-
-                me.availableSwitch.get(0).checked = true;
-                me.availableSwitch.change();
-            });
-
-            atCustomerButton.click(() => {
-                atCustomerButton.hide();
-                acceptCustomerDiv.append(finishCustomerButton);
-                cancelCustomerButton.hide();
-
+            $('#salesman-finder--arrived').click(() => {
                 me.websocketConnection.sendMessage(me.websocketConnection.messages.arrivedAtCustomer());
+                me.modal.close();
+                me.currentClient = null;
+                me.modal = null;
             });
 
-            cancelCustomerButton.click(() => {
-                acceptCustomerDiv.remove();
-
-                me.availableSwitch.get(0).checked = false;
-                me.availableSwitch.change();
-
-                me.websocketConnection.sendMessage(me.websocketConnection.messages.cancelCustomer(customerID));
+            $('#salesman-finder--customer-gone').click(() => {
+                me.websocketConnection.sendMessage(me.websocketConnection.messages.customerIsGone(me.currentClient.ID));
+                me.modal.close();
+                me.modal = null;
+                me.currentClient = null;
+                me.toggleState(true);
             });
 
-            acceptCustomerButton.click(() => {
-                me.websocketConnection.sendMessage(me.websocketConnection.messages.acceptCustomer(customerID));
+            me.websocketConnection.sendMessage(me.websocketConnection.messages.acceptCustomer(me.currentClient.ID));
+        },
 
-                me.availableSwitch.get(0).checked = false;
-                me.availableSwitch.change();
+        onSellerRequested: function (customer) {
+            let me = this;
 
-                acceptCustomerButton.hide();
-                acceptCustomerDiv.append(atCustomerButton);
-                acceptCustomerDiv.append(cancelCustomerButton);
+            try {
+                fully.setAudioVolume(80, 5);
+                fully.playSound("", true);
+            } catch (e) {
+            }
+
+            let notification = new Noty({
+                text: 'Dein Kunde wartet am Produktpiloten: ' + customer.Location,
+                closeWith: ['button'],
+                progressBar: true,
+                type: 'information',
+                timeout: 1000 * 30,
+                buttons: [
+                    Noty.button('Ich bin auf dem Weg', 'btn btn-success', function () {
+                        me.currentClient = customer;
+                        me.acceptCustomer();
+
+                        notification.close();
+                    }, {id: 'okbutton', 'data-status': 'ok'})
+                ],
+                callbacks: {
+                    onClose: function () {
+                        delete me.notifications[customer.ID];
+
+                        if (Object.keys(me.notifications).length === 0) {
+                            try {
+                                fully.stopSound();
+                            } catch (e) {
+                            }
+                        }
+                    }
+                }
             });
+            notification.show();
 
-            acceptCustomerDiv.append(acceptCustomerButton);
-            customerList.append(acceptCustomerDiv);
+            me.notifications[customer.ID] = notification;
         },
 
         setState: function (state) {
@@ -123,9 +106,9 @@
             me.state = state;
 
             if (state === true) {
-                me.availableSwitch.css('color', '#00ff00');
+                me.getSwitch().css('color', '#00ff00');
             } else {
-                me.availableSwitch.css('color', '#ff0000');
+                me.getSwitch().css('color', '#ff0000');
             }
         },
 
@@ -138,15 +121,26 @@
                 me.setState(state);
             }
 
+            if (me.state === false) {
+                Object.keys(me.notifications).map(function(key) {
+                    return me.notifications[key];
+                }).forEach((notification) => {
+                    notification.close();
+                });
+            }
+
             me.websocketConnection.sendMessage(me.websocketConnection.messages.setAvailable(me.state));
+        },
+
+        getSwitch: function () {
+            return $('.entry--salesman-finder');
         },
 
         init: function () {
             let me = this;
             me.websocketConnection = new $.ostSalesmanFinder.WebsocketConnection();
 
-            me.availableSwitch = $('.entry--salesman-finder');
-            me.availableSwitch.click(() => {
+            me.getSwitch().click(() => {
                 me.toggleState();
             });
 
@@ -155,33 +149,33 @@
             });
 
             me.websocketConnection.events.onSellerRequested((data) => {
-                let customerID = data['content'];
-                this.createCustomer(customerID);
+                this.onSellerRequested(data['content']);
             });
 
             me.websocketConnection.events.onSellerRequestCanceled((data) => {
                 let customerID = data['content'];
 
-                let acceptCustomerDiv = me.$el.find('[data-id="' + customerID + '"]');
-
-                if (acceptCustomerDiv.length === 0) {
-                    return;
+                if (this.currentClient !== null && this.currentClient.ID === customerID) {
+                    this.modal.close();
+                    me.toggleState(true);
                 }
 
-                acceptCustomerDiv.remove();
-                me.toggleState(true);
+                if (this.notifications[customerID] !== undefined) {
+                    this.notifications[customerID].close();
+                }
             });
 
             me.websocketConnection.events.onConnect(() => {
-                me.availableSwitch.show();
+                me.getSwitch().show();
             });
 
-            me.websocketConnection.connect(me.websocketConnection.types.seller);
-
             me.websocketConnection.sendMessage(me.websocketConnection.messages.identify({
-                'number': me.$el.find('.ost-consultant--badge').data('consultant-id')
+                'number': me.$el.find('.ost-consultant--badge').data('consultant-id').toString()
             }));
+
             me.websocketConnection.sendMessage(me.websocketConnection.messages.getStatus());
+
+            me.websocketConnection.connect(me.websocketConnection.types.seller);
         }
     });
 
@@ -190,9 +184,4 @@
             $("body").ostSalesmanFinderSeller();
         }
     });
-
-    // subscribe to loading emotions
-    $.subscribe('plugin/swEmotionLoader/onLoadEmotionFinished', function () {
-
-    })
 })(jQuery);
