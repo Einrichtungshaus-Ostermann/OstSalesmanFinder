@@ -106,9 +106,9 @@
             me.state = state;
 
             if (state === true) {
-                me.getSwitch().css('color', '#00ff00');
+                me.getSwitch().css('color', '#339900');
             } else {
-                me.getSwitch().css('color', '#ff0000');
+                me.getSwitch().css('color', '#a12726');
             }
         },
 
