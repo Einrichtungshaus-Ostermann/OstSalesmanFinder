@@ -16,9 +16,14 @@
     // detail plugin
     $.plugin("ostSalesmanFinderSeller", {
 
+        /*
         modalContent: "<button id='salesman-finder--cancel'>Ich wurde aufgehalten</button>" +
             "<button id='salesman-finder--arrived'>Ich bin da!</button>" +
             "<button id='salesman-finder--customer-gone'>Kunde war schon weg</button>",
+            */
+
+
+        modalContent: '<img id="salesman-finder--arrived" src="http://inhouse-ost-5503/custom/plugins/OstSalesmanFinder/Resources/frontend/img/salesman-finder--salesman--arrived.png" style=""><img id="salesman-finder--cancel" src="http://inhouse-ost-5503/custom/plugins/OstSalesmanFinder/Resources/frontend/img/salesman-finder--salesman--delayed.png"><img id="salesman-finder--customer-gone" src="http://inhouse-ost-5503/custom/plugins/OstSalesmanFinder/Resources/frontend/img/salesman-finder--salesman--gone.png">',
         modal: null,
         currentClient: null,
         notifications: {},
@@ -28,10 +33,13 @@
 
             me.toggleState(false);
             me.modal = $.modal.open(this.modalContent, {
-                width: 800,
-                height: 500,
+                //width: 800,
+                //height: 500,
+                width: '100%',
                 showCloseButton: false,
-                closeOnOverlay: false
+                closeOnOverlay: false,
+                sizing: "content",
+                additionalClass: "ost-salesman-finder--seller--actions"
             });
 
             $('#salesman-finder--cancel').click(() => {
