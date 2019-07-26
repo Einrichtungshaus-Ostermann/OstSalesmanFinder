@@ -3,9 +3,10 @@
         xsi:noNamespaceSchemaLocation="../../../engine/Shopware/Components/Plugin/schema/plugin.xsd">
 
     <label>SalesmanFinder</label>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <copyright><![CDATA[Einrichtungshaus Ostermann GmbH & Co. KG]]></copyright>
     <link>https://www.ostermann.de</link>
     <author><![CDATA[Einrichtungshaus Ostermann GmbH & Co. KG]]></author>
     <compatibility minVersion="5.5.0"/>
+
 </plugin>
