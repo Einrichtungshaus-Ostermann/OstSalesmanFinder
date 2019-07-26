@@ -99,6 +99,10 @@
                     return this.addEventListener('onConnect', callback)
                 },
 
+                onClose: (callback) => {
+                    return this.addEventListener('onClose', callback)
+                },
+
                 /** Global */
                 onAvailableSellerCount: (callback) => {
                     return this.addEventListener('available_seller_count', callback);
@@ -160,6 +164,7 @@
                 this.connection.onclose = (e) => {
                     if (e.code === 1000) {
                         console.log("WebSocket: closed");
+                        this.callEventListener('onClose');
                     } else {
                         console.log("RECONNECT!");
                         this.connect(connectionType);
