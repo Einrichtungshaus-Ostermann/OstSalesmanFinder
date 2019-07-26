@@ -146,19 +146,41 @@
 
             let buffer = [];
             this.send = (message) => {
-                buffer.push(message);
+                try {
+                    this.connection.send(message);
+                } catch (e) {
+                    buffer.push(message);
+                }
             };
 
             this.connect = (connectionType) => {
                 this.connection = new WebSocket('ws://' + salesmanFinderConfig.webSocketPath + connectionType.path);
 
+                let originalOnClose = this.connection.onclose;
+                this.connection.onclose = (e) => {
+                    if (e.code === 1000) {
+                        console.log("WebSocket: closed");
+                    } else {
+                        console.log("RECONNECT!");
+                        this.connect(connectionType);
+                    }
+
+                    originalOnClose(e);
+                };
+
+                let originalOnError = this.connection.onerror;
+                this.connection.onerror = (e) => {
+                    if (e.code === 'ECONNREFUSED') {
+                        console.log("RECONNECT!");
+                        this.connect(connectionType);
+                    } else {
+                        originalOnError(e);
+                    }
+                };
+
                 this.connection.onmessage = this.onMessage;
 
                 this.connection.onopen = () => {
-                    this.send = (message) => {
-                        this.connection.send(message);
-                    };
-
                     buffer.forEach((message) => {
                         this.send(message);
                     });
