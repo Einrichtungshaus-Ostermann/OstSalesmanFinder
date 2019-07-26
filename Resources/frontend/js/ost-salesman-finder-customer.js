@@ -56,6 +56,8 @@
         sellerCount: 0,
         modal: null,
         requested: false,
+        found: false,
+
         onClick: () => {
         },
 
@@ -127,57 +129,71 @@
 
         cancelRequest: function () {
             clearTimeout(this.timer);
-            this.websocketConnection.sendMessage(this.websocketConnection.messages.cancelSellerRequest());
+
             this.requested = false;
+            this.found = false;
+
             this.setTitleText("idle");
             this.setDescriptionText("idle");
             this.setInfoText("press-button-for-call");
             this.setButtonText("call-consulant");
             this.onClick = this.requestSeller;
+
+            this.websocketConnection.sendMessage(this.websocketConnection.messages.cancelSellerRequest());
         },
 
         requestSeller: function () {
+            clearTimeout(this.timer);
+
             this.setTitleText("idle");
             this.setDescriptionText("idle");
             this.setInfoText("searching-consultant");
             this.setButtonText("cancel");
             this.onClick = this.cancelRequest;
 
-            if (this.timer !== null) {
-                clearTimeout(this.timer);
-            }
 
-            this.websocketConnection.sendMessage(this.websocketConnection.messages.requestSeller());
             this.requested = true;
+            this.found = false;
 
             this.timer = setTimeout(() => {
                 this.onSearchTimeout();
             }, salesmanFinderConfig.searchTimeout * 1000);
+
+            this.websocketConnection.sendMessage(this.websocketConnection.messages.requestSeller());
         },
 
         onSearchTimeout: function () {
-            this.websocketConnection.sendMessage(this.websocketConnection.messages.cancelSellerRequest());
-            this.requested = false;
             this.setTitleText("idle");
             this.setDescriptionText("idle");
             this.setInfoText("sorry-no-consultant");
             this.setButtonText("retry");
             this.onClick = this.requestSeller;
+
+            this.found = false;
+
+            if (this.requested) {
+                this.websocketConnection.sendMessage(this.websocketConnection.messages.cancelSellerRequest());
+                this.requested = false;
+            }
         },
 
         onSellerUnavailable: function () {
+            this.setTitleText("idle");
+            this.setDescriptionText("idle");
+            this.setImageType("idle");
+
+            this.found = false;
+
             if (this.sellerCount === 0) {
                 this.onSearchTimeout();
                 this.getButton().hide();
                 return;
             }
 
-            this.setTitleText("idle");
-            this.setDescriptionText("idle");
             this.setInfoText("seller-not-available");
             this.setButtonText("cancel");
-            this.setImageType("idle");
             this.onClick = this.cancelRequest;
+
             this.requested = true;
         },
 
@@ -189,7 +205,9 @@
             this.setTitleText("waiting");
             this.setDescriptionText("waiting");
             this.getButton().hide();
+
             this.requested = false;
+            this.found = true;
 
             clearTimeout(this.timer);
         },
@@ -201,30 +219,42 @@
                 this.sellerCount = amount;
                 this.getIcon().show();
 
-                if (this.modal !== null && this.requested === false) {
+                if (this.modal !== null && !this.requested && !this.found) {
+                    this.setTitleText("idle");
+                    this.setDescriptionText("idle");
                     this.setInfoText("press-button-for-call");
+                    this.setButtonText("call-consulant");
+                    this.onClick = this.requestSeller;
+
                     this.getButton().show();
                 }
             } else {
                 this.sellerCount = amount;
                 this.getIcon().hide();
 
-                if (this.modal !== null) {
+                if (this.modal !== null && !this.found) {
                     this.setInfoText("sorry-no-consultant");
                     this.getButton().hide();
+
+                    if (this.requested) {
+                        this.requested = false;
+                        this.websocketConnection.sendMessage(this.websocketConnection.messages.cancelSellerRequest());
+                    }
                 }
             }
         },
 
         onClose: function () {
-            this.modal = null;
-            clearTimeout(this.timer);
-
             if (this.requested) {
                 this.websocketConnection.sendMessage(this.websocketConnection.messages.cancelSellerRequest());
+                this.requested = false;
             }
 
+            this.modal = null;
+            this.found = false;
             this.onClick = this.requestSeller;
+
+            clearTimeout(this.timer);
         },
 
         openPopup: function () {
@@ -233,6 +263,7 @@
                     this.onClose();
                 }
             });
+
             this.setInfoText("press-button-for-call");
             this.setButtonText("call-consulant");
             this.setTitleText("idle");
