@@ -122,7 +122,7 @@
             }
 
             if (me.state === false) {
-                Object.keys(me.notifications).map(function(key) {
+                Object.keys(me.notifications).map(function (key) {
                     return me.notifications[key];
                 }).forEach((notification) => {
                     notification.close();
@@ -133,7 +133,7 @@
         },
 
         getSwitch: function () {
-            return $('.entry--salesman-finder');
+            return $('.entry--salesman-finder.icon--chat');
         },
 
         init: function () {
@@ -172,6 +172,24 @@
             me.websocketConnection.sendMessage(me.websocketConnection.messages.identify({
                 'number': me.$el.find('.ost-consultant--badge').data('consultant-id').toString()
             }));
+
+
+            window.onbeforeunload = function() {
+                try {
+                    fully.stopSound();
+                } catch (e) {
+                }
+
+                if (Object.keys(me.notifications).length !== 0) {
+                    return "Du hast noch unbeantwortet Anfragen!";
+                }
+
+                return;
+            };
+
+            window.addEventListener("beforeunload", function(e){
+
+            }, false);
 
             me.websocketConnection.sendMessage(me.websocketConnection.messages.getStatus());
 

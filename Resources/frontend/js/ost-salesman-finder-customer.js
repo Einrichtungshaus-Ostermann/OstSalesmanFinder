@@ -124,7 +124,7 @@
         },
 
         getIcon: function () {
-            return this.$el.find('.entry--salesman-finder');
+            return this.$el.find('.entry--salesman-finder.icon--salesman-finder');
         },
 
         cancelRequest: function () {
