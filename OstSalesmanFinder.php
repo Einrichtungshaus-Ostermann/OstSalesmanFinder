@@ -11,6 +11,10 @@
  * 1.0.3
  * - fixed styling
  *
+ * 1.0.4
+ * 1.0.5
+ * - fixed versioning
+ *
  * @package   OstSalesmanFinder
  *
  * @author    Tim Windelschmidt <tim.windelschmidt@ostermann.de>
