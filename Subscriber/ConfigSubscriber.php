@@ -53,8 +53,6 @@ class ConfigSubscriber implements SubscriberInterface
         $subject->View()->assign('salesmanFinderResetTimeout', $this->config['resetTimeout']);
         $subject->View()->assign('salesmanFinderWebSocketPath', $this->config['webSocketPath']);
         $subject->View()->assign('salesmanFinderTestMode', $this->config['testMode']);
-//var_dump($subject->View()->getAssign());
-//die();
     }
 
     public function onListing(\Enlight_Event_EventArgs $args)

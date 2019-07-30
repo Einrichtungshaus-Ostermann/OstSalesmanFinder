@@ -154,9 +154,11 @@ class MessageHandler
 
         $seller->setAvailable((bool)$data);
 
-        array_map(function (Customer $customer) {
-            $this->getAvailableSellerCount($customer->getClient(), null);
-        }, $this->customerRegistry->getCustomer());
+        $this->customerRegistry->getCustomersForSeller($seller)->then(function (array $customers) {
+            array_map(function (Customer $customer) {
+                $this->getAvailableSellerCount($customer->getClient(), null);
+            }, $customers);
+        });
     }
 
     public function acceptCustomer(Client $client, $data): void
