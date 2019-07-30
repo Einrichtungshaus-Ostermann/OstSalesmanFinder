@@ -14,7 +14,7 @@
     "use strict";
 
     // detail plugin
-    $.plugin("ostSalesmanFinderCustomer", {
+    $.plugin("ostSalesmanFinderLandingPage", {
         infoText: {
             "press-button-for-call": "",
             "searching-consultant": "Ein freier Berater wird gesucht.",
@@ -55,7 +55,6 @@
         websocketConnection: null,
 
         sellerCount: 0,
-        modal: null,
         requested: false,
         found: false,
 
@@ -67,35 +66,19 @@
         },
 
         setInfoText: function (text) {
-            if (this.modal === null) {
-                this.openPopup();
-            }
-
             this.getInfo().text(this.infoText[text])
         },
 
         setDescriptionText: function (text) {
-            if (this.modal === null) {
-                this.openPopup();
-            }
-
             this.getDescription().text(this.descriptionText[text])
         },
 
         setTitleText: function (text) {
-            if (this.modal === null) {
-                this.openPopup();
-            }
-
             this.getTitle().text(this.titleText[text])
         },
 
 
         setButtonText: function (text) {
-            if (this.modal === null) {
-                this.openPopup();
-            }
-
             this.getButton().show();
             this.getButton().text(this.buttonText[text])
         },
@@ -118,10 +101,6 @@
 
         getInfo: function () {
             return this.$el.find('#salesman-finder--text');
-        },
-
-        getIcon: function () {
-            return this.$el.find('.entry--salesman-finder.icon--salesman-finder');
         },
 
         cancelRequest: function () {
@@ -216,9 +195,8 @@
 
             if (amount > 0) {
                 this.sellerCount = amount;
-                this.getIcon().show();
 
-                if (this.modal !== null && !this.requested && !this.found) {
+                if (!this.found) {
                     this.setTitleText("idle");
                     this.setDescriptionText("idle");
                     this.setInfoText("press-button-for-call");
@@ -229,9 +207,8 @@
                 }
             } else {
                 this.sellerCount = amount;
-                this.getIcon().hide();
 
-                if (this.modal !== null && !this.found) {
+                if (!this.found) {
                     this.setInfoText("sorry-no-consultant");
                     this.getButton().hide();
 
@@ -249,29 +226,19 @@
                 this.requested = false;
             }
 
-            this.modal = null;
             this.found = false;
             this.onClick = this.requestSeller;
 
             clearTimeout(this.timer);
         },
 
-        openPopup: function () {
-            this.modal = $.modal.open(this.content, {
-                width: 800, height: 400, onClose: () => {
-                    this.onClose();
-                }
-            });
-
+        reset: function () {
             this.setInfoText("press-button-for-call");
             this.setButtonText("call-consulant");
             this.setTitleText("idle");
             this.setDescriptionText("idle");
             this.onClick = this.requestSeller;
-
-            this.getButton().click(() => {
-                this.onClick();
-            })
+            this.found = false;
         },
 
         init: function () {
@@ -280,11 +247,7 @@
             this.timer = null;
 
             this.websocketConnection.events.onReset(() => {
-                if (this.modal !== null) {
-                    this.modal.close();
-                }
-
-                this.onClick = this.requestSeller;
+                this.reset();
             });
 
             this.websocketConnection.events.onSellerUnavailable((message) => {
@@ -298,35 +261,25 @@
             });
 
             this.websocketConnection.events.onConnect(() => {
-                this.getIcon().click(() => {
-                    this.openPopup();
-                });
+                this.reset();
             });
+
+            this.getButton().click(() => {
+                this.onClick();
+            })
 
             this.websocketConnection.sendMessage(this.websocketConnection.messages.getAvailableSellerCount());
 
             this.websocketConnection.connect(this.websocketConnection.types.customer);
             this.websocketConnection.sendMessage(this.websocketConnection.messages.identify({}));
-
-
-            if (window.sessionStorage.getItem("disable-seller-popup") !== "true" && $('.entry--salesman-finder').is(":visible")) {
-                if (salesmanFinderConfig.salesmanFinderPopupTimeout === -1) {
-                    return;
-                }
-
-                setTimeout(() => {
-                    this.openPopup();
-
-                    window.sessionStorage.setItem("disable-seller-popup", "true");
-                }, salesmanFinderConfig.popupTimeout * 1000);
-            }
         }
     });
 
-    $(document).ready(function () {
-        let body = $('body');
-        if (!body.hasClass('is--consultant') && !body.hasClass('has--no-header')) {
-            body.ostSalesmanFinderCustomer();
+
+    // subscribe to loading emotions
+    $.subscribe('plugin/swEmotionLoader/onLoadEmotionFinished', function () {
+        if ($('body').find('#salesman-finder--tablet-emotion').length > 0) {
+            $("body").ostSalesmanFinderLandingPage();
         }
-    });
+    })
 })(jQuery);

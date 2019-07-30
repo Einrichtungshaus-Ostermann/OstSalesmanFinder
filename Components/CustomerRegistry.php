@@ -36,6 +36,27 @@ class CustomerRegistry
             });
     }
 
+
+    public function getCustomersForSeller(Seller $seller)
+    {
+        echo 'Requsting Customers for Seller ' . $seller->getNumber() . "\n";
+        return $this->doGetRequest('http://intranet-apswit11/api/consultantfinder/customerForSeller/' . $seller->getNumber())
+            ->then(function ($data) {
+                return json_decode($data, true);
+            }, function (\Exception $e) {
+                echo $e->getMessage();
+            })
+            ->then(function (array $data) {
+                return array_map(function (array $data) {
+                    return $data['ipAddress'];
+                }, $data);
+            })->then(function(array $ipAddresses) {
+                return array_filter($this->customer, function (Customer $customer) use ($ipAddresses) {
+                        return in_array($customer->getClient()->getIP(), $ipAddresses, true);
+                });
+            });
+    }
+
     public function onIdentify(Client $client, array $data): void
     {
         $customer = $this->getCustomerForClient($client);
