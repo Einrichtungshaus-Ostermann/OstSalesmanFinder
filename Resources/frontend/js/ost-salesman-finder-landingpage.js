@@ -30,8 +30,8 @@
         },
 
         images: {
-            "idle": "/custom/plugins/OstSalesmanFinder/Resources/frontend/img/salesman-finder--idle--icon.png",
-            "waiting": "/custom/plugins/OstSalesmanFinder/Resources/frontend/img/salesman-finder--waiting--icon.png"
+            "idle": "/custom/plugins/OstSalesmanFinder/Resources/frontend/img/salesman-finder--idle--icon--360x600.png",
+            "waiting": "/custom/plugins/OstSalesmanFinder/Resources/frontend/img/salesman-finder--waiting--icon--360x600.png"
         },
 
         descriptionText: {
@@ -45,13 +45,6 @@
             "waiting": "Hilfe ist auf dem Weg..."
         },
 
-        content: '<div style="float: left; width: 40%; ">' +
-            '<img id="salesman-finder--image" src="/custom/plugins/OstSalesmanFinder/Resources/frontend/img/salesman-finder--idle--icon.png" style="margin: auto; margin-top: 50px;">' +
-            '</div><div style="float: left;width: 55%;margin-right: 5%;padding-top: 30px;">' +
-            '<span id="salesman-finder--title" style="text-transform: uppercase;font-weight: bold;font-size: 28px;">#TEXT#</span>' +
-            '<p id="salesman-finder--description" style="font-size: 28px;line-height: 36px;margin-top: 30px;">#TEXT#</p>' +
-            '<p id="salesman-finder--text" style="font-size: 28px;line-height: 36px;margin-top: 30px;">#TEXT#</p><div style="text-align: center;"><button style="margin: auto; width: 80%; text-align: center; margin-top: 20px;" class="btn is--primary" id="salesman-finder--button">#TEXT#</button></div></div>',
-
         websocketConnection: null,
 
         sellerCount: 0,
@@ -62,7 +55,7 @@
         },
 
         setImageType: function (type) {
-            this.getImage().attr("src", this.images[type])
+            this.getImage().css('background-image', "url('" + this.images[type] + "')");
         },
 
         setInfoText: function (text) {
