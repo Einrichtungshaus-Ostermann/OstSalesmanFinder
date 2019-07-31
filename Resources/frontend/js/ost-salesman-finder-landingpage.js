@@ -230,6 +230,7 @@
             this.setButtonText("call-consulant");
             this.setTitleText("idle");
             this.setDescriptionText("idle");
+            this.setImageType("idle");
             this.onClick = this.requestSeller;
             this.found = false;
         },
