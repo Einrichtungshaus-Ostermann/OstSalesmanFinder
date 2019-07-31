@@ -70,8 +70,8 @@
             }
 
             let notification = new Noty({
-                text: 'Dein Kunde wartet am Produktpiloten: ' + customer.division,
-                closeWith: ['button'],
+                text: 'Dein Kunde wartet am Produkt-Piloten: ' + customer.division,
+                closeWith: [],
                 progressBar: true,
                 type: 'information',
                 timeout: 1000 * 30,
