@@ -48,7 +48,10 @@ class ConfigSubscriber implements SubscriberInterface
         /** @var \Shopware_Controllers_Frontend_Listing $subject */
         $subject = $args->getSubject();
 
-        $subject->View()->assign('salesmanFinderPopupTimeout', -1);
+        if ($subject->View()->getAssign('salesmanFinderPopupTimeout') === null) {
+            $subject->View()->assign('salesmanFinderPopupTimeout', -1);
+        }
+
         $subject->View()->assign('salesmanFinderSearchTimeout', $this->config['searchTimeout']);
         $subject->View()->assign('salesmanFinderResetTimeout', $this->config['resetTimeout']);
         $subject->View()->assign('salesmanFinderWebSocketPath', $this->config['webSocketPath']);

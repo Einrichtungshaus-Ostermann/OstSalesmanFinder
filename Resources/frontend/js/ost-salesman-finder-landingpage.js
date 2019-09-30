@@ -17,14 +17,14 @@
     $.plugin("ostSalesmanFinderLandingPage", {
         infoText: {
             "press-button-for-call": "",
-            "searching-consultant": "Ein freier Berater wird gesucht.",
+            "searching-consultant": "Ein freier Verkäufer wird gesucht.",
             "please-wait-for-consultant": "Bitte warte hier, bis er eingetroffen ist.",
-            "seller-not-available": "Dein Berater ist leider nicht mehr verfügbar. Ein alternativer Berater wird gesucht.",
-            "sorry-no-consultant": "Leider sind gerade alle Berater im Kundengespräch. Bitte versuche es in ein paar Minuten erneut.",
+            "seller-not-available": "Dein Verkäufer ist leider nicht mehr verfügbar. Ein alternativer Verkäufer wird gesucht.",
+            "sorry-no-consultant": "Leider sind gerade alle Verkäufer im Kundengespräch. Bitte versuche es in ein paar Minuten erneut.",
         },
 
         buttonText: {
-            "call-consulant": "Berater rufen",
+            "call-consulant": "Verkäufer rufen",
             "retry": "Nochmal versuchen",
             "cancel": "Abbrechen"
         },
@@ -35,8 +35,8 @@
         },
 
         descriptionText: {
-            "idle": "Überall wo Du dieses Symbol siehst, kannst Du einen Berater herbeirufen.",
-            "waiting": "Dein persönlicher Berater ist auf dem Weg hierhin.",
+            "idle": "Überall wo Du dieses Symbol siehst, kannst Du einen Verkäufer herbeirufen.",
+            "waiting": "Dein persönlicher Verkäufer ist auf dem Weg hierhin.",
             "empty": ""
         },
 
