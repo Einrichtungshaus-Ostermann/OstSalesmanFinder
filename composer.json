@@ -4,8 +4,6 @@
     "type": "shopware-plugin",
     "description": "",
     "require": {
-        "cboden/ratchet": "^0.4",
-        "react/http-client": "^0.5.9"
     },
     "extra": {
         "installer-name": "OstSalesmanFinder"
