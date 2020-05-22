@@ -15,6 +15,14 @@
  * 1.0.5
  * - fixed versioning
  *
+ * 1.0.6
+ * 1.0.7
+ * 1.0.8
+ * - fixed versioning
+ *
+ * 1.0.9
+ * - removed php websocket implementation
+ *
  * @package   OstSalesmanFinder
  *
  * @author    Tim Windelschmidt <tim.windelschmidt@ostermann.de>
